@@ -1,0 +1,7 @@
+nothing:
+	@echo "Preventing the user from accidently running the clean command."
+	
+clean:
+	rm -rf Release/
+	rm -rf Debug/
+
