@@ -101,3 +101,73 @@ let newLines =
             else
                 { block with CloseBrace = Terminal.mapPrefix ensureNewLine block.CloseBrace }
     }
+
+/// <summary>
+/// Gets the trivia from a terminal option.
+/// </summary>
+let getTrivia paren =
+    match paren with
+    | None -> []
+    | Some p -> p.Prefix
+
+let qubitBindingUpdate =
+    { new Rewriter<Trivia list>() with
+        override _.Terminal(context, terminal) =
+            match context with
+            | [] -> terminal
+            | _ -> { terminal with Prefix = context @ terminal.Prefix }
+
+        override rewriter.QubitBinding(context, binding) =
+            { binding with Name = rewriter.QubitSymbolBinding(context, binding.Name) }
+
+        override rewriter.Tuple(context, _, tuple) =
+            { tuple with OpenParen = rewriter.Terminal(context, tuple.OpenParen) }
+
+        override rewriter.Use(_, ``use``) =
+            let openTrivia = ``use``.OpenParen |> getTrivia
+            let closeTrivia = ``use``.CloseParen |> getTrivia
+
+            { ``use`` with
+                UseKeyword = rewriter.Terminal([], { ``use``.UseKeyword with Text = "use" })
+                Binding = rewriter.QubitBinding(openTrivia, ``use``.Binding)
+                OpenParen = None
+                CloseParen = None
+                Semicolon = rewriter.Terminal(closeTrivia, ``use``.Semicolon)
+            }
+
+        override rewriter.UseBlock(_, ``use``) =
+            let openTrivia = ``use``.OpenParen |> getTrivia
+            let closeTrivia = ``use``.CloseParen |> getTrivia
+
+            { ``use`` with
+                UseKeyword = rewriter.Terminal([], { ``use``.UseKeyword with Text = "use" })
+                Binding = rewriter.QubitBinding(openTrivia, ``use``.Binding)
+                OpenParen = None
+                CloseParen = None
+                Block = rewriter.Block(closeTrivia, rewriter.Statement, ``use``.Block)
+            }
+
+        override rewriter.Borrow(_, borrow) =
+            let openTrivia = borrow.OpenParen |> getTrivia
+            let closeTrivia = borrow.CloseParen |> getTrivia
+
+            { borrow with
+                BorrowKeyword = rewriter.Terminal([], { borrow.BorrowKeyword with Text = "borrow" })
+                Binding = rewriter.QubitBinding(openTrivia, borrow.Binding)
+                OpenParen = None
+                CloseParen = None
+                Semicolon = rewriter.Terminal(closeTrivia, borrow.Semicolon)
+            }
+
+        override rewriter.BorrowBlock(_, borrow) =
+            let openTrivia = borrow.OpenParen |> getTrivia
+            let closeTrivia = borrow.CloseParen |> getTrivia
+
+            { borrow with
+                BorrowKeyword = rewriter.Terminal([], { borrow.BorrowKeyword with Text = "borrow" })
+                Binding = rewriter.QubitBinding(openTrivia, borrow.Binding)
+                OpenParen = None
+                CloseParen = None
+                Block = rewriter.Block(closeTrivia, rewriter.Statement, borrow.Block)
+            }
+    }
