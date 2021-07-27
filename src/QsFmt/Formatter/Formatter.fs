@@ -42,6 +42,14 @@ let format source =
         >> printer.Document
     )
 
+[<CompiledName "Update">]
+let update source =
+    parse source
+    |> Result.map (
+        curry qubitBindingUpdate.Document []
+        >> printer.Document
+    )
+
 [<CompiledName "Identity">]
 let identity source =
     parse source |> Result.map printer.Document

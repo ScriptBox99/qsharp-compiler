@@ -132,6 +132,30 @@ type internal 'result Reducer =
     default Return: returns:Return -> 'result
 
     /// <summary>
+    /// Reduces a <see cref="Use"/> statement node.
+    /// </summary>
+    abstract Use: ``use``:Use -> 'result
+    default Use: ``use``:Use -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="UseBlock"/> statement node.
+    /// </summary>
+    abstract UseBlock: ``use``:UseBlock -> 'result
+    default UseBlock: ``use``:UseBlock -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="Borrow"/> statement node.
+    /// </summary>
+    abstract Borrow: borrow:Borrow -> 'result
+    default Borrow: borrow:Borrow -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="BorrowBlock"/> statement node.
+    /// </summary>
+    abstract BorrowBlock: borrow:BorrowBlock -> 'result
+    default BorrowBlock: borrow:BorrowBlock -> 'result
+
+    /// <summary>
     /// Reduces an <see cref="If"/> statement node.
     /// </summary>
     abstract If: ifs:If -> 'result
@@ -154,6 +178,36 @@ type internal 'result Reducer =
     /// </summary>
     abstract SymbolDeclaration: declaration:SymbolDeclaration -> 'result
     default SymbolDeclaration: declaration:SymbolDeclaration -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="QubitBinding"/> node.
+    /// </summary>
+    abstract QubitBinding: binding:QubitBinding -> 'result
+    default QubitBinding: binding:QubitBinding -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="QubitSymbolBinding"/> node.
+    /// </summary>
+    abstract QubitSymbolBinding: symbol:QubitSymbolBinding -> 'result
+    default QubitSymbolBinding: symbol:QubitSymbolBinding -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="QubitInitializer"/> node.
+    /// </summary>
+    abstract QubitInitializer: initializer:QubitInitializer -> 'result
+    default QubitInitializer: initializer:QubitInitializer -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="SingleQubit"/> node.
+    /// </summary>
+    abstract SingleQubit: newQubit:SingleQubit -> 'result
+    default SingleQubit: newQubit:SingleQubit -> 'result
+
+    /// <summary>
+    /// Reduces a <see cref="QubitArray"/> node.
+    /// </summary>
+    abstract QubitArray: newQubits:QubitArray -> 'result
+    default QubitArray: newQubits:QubitArray -> 'result
 
     /// <summary>
     /// Reduces an <see cref="InterpStringContent"/> node.
