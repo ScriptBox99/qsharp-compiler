@@ -157,8 +157,10 @@ statement
     | 'until' expression (';' | 'fixup' scope) # UntilStatement
     | 'within' scope # WithinStatement
     | 'apply' scope # ApplyStatement
-    | ('use' | 'using') (qubitBinding | '(' qubitBinding ')') (';' | scope) # UseStatement
-    | ('borrow' | 'borrowing') (qubitBinding | '(' qubitBinding ')') (';' | scope) # BorrowStatement
+    | use=('use' | 'using') (binding=qubitBinding | openParen='(' binding=qubitBinding closeParen=')') semicolon=';' # UseStatement
+    | use=('use' | 'using') (binding=qubitBinding | openParen='(' binding=qubitBinding closeParen=')') body=scope # UseBlock
+    | borrow=('borrow' | 'borrowing') (binding=qubitBinding | openParen='(' binding=qubitBinding closeParen=')') semicolon=';' # BorrowStatement
+    | borrow=('borrow' | 'borrowing') (binding=qubitBinding | openParen='(' binding=qubitBinding closeParen=')') body=scope # BorrowBlock
     ;
 
 scope : openBrace=BraceLeft statements+=statement* closeBrace=BraceRight;
@@ -187,12 +189,12 @@ updateOperator
 
 forBinding : symbolBinding 'in' expression;
 
-qubitBinding : symbolBinding '=' qubitInitializer;
+qubitBinding : binding=symbolBinding equals='=' value=qubitInitializer;
 
 qubitInitializer
-    : 'Qubit' '(' ')'
-    | 'Qubit' '[' expression ']'
-    | '(' (qubitInitializer (',' qubitInitializer)* ','?)? ')'
+    : qubit='Qubit' openParen='(' closeParen=')' # SingleQubit
+    | qubit='Qubit' openBracket='[' length=expression closeBracket=']' # QubitArray
+    | openParen='(' (initializers+=qubitInitializer (commas+=',' initializers+=qubitInitializer)* ','?)? closeParen=')' # QubitTuple
     ;
 
 // Expression
