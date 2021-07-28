@@ -8,24 +8,6 @@ open System
 open System.Reflection
 open Xunit
 
-/// A test case containing an example of source code before and after formatting.
-type Example =
-    {
-        /// The name of the test case.
-        Name: string
-
-        /// A reason for skipping the test, if Some. The test should not be skipped if None.
-        Skip: string option
-
-        /// The source code before formatting.
-        Before: string
-
-        /// The expected source code after formatting.
-        After: string
-    }
-
-    override example.ToString() = example.Name
-
 /// A test case containing source code that should not change after formatting.
 type FixedPoint =
     {
@@ -41,6 +23,41 @@ type FixedPoint =
 
     override fixedPoint.ToString() = fixedPoint.Name
 
+/// <summary>
+/// Marks a property of type <c>string</c> that should be run as a fixed point test case, with the string being the
+/// before and after source code.
+/// </summary>
+type FixedPointAttribute() =
+    inherit Attribute()
+
+    /// A reason for skipping the test, if non-null. The test should not be skipped if null.
+    member val Skip: string = null with get, set
+
+type ExampleKind =
+    | FormatExample = 0
+    | UpdateExample = 1
+
+/// A test case containing an example of source code before and after transforming.
+type Example =
+    {
+        /// The name of the test case.
+        Name: string
+
+        /// A reason for skipping the test, if Some. The test should not be skipped if None.
+        Skip: string option
+
+        /// The source code before formatting.
+        Before: string
+
+        /// The expected source code after formatting.
+        After: string
+
+        // The kind of example it is, either format or update.
+        Kind: ExampleKind
+    }
+
+    override example.ToString() = example.Name
+
 module internal Example =
     /// Converts an example test case into a fixed point test case.
     let toFixedPoint (example: Example) =
@@ -54,21 +71,14 @@ module internal Example =
 /// Marks a property of type <c>string * string</c> that should be run as an example test case, with the first item
 /// being the source code before and the second item being the source code after.
 /// </summary>
-type ExampleAttribute() =
+type ExampleAttribute(exampleKind : ExampleKind) =
     inherit Attribute()
 
     /// A reason for skipping the test, if non-null. The test should not be skipped if null.
     member val Skip: string = null with get, set
 
-/// <summary>
-/// Marks a property of type <c>string</c> that should be run as a fixed point test case, with the string being the
-/// before and after source code.
-/// </summary>
-type FixedPointAttribute() =
-    inherit Attribute()
-
-    /// A reason for skipping the test, if non-null. The test should not be skipped if null.
-    member val Skip: string = null with get, set
+    /// The kind of example it is, either FormatExample or UpdateExample
+    member val Kind: ExampleKind = exampleKind with get
 
 /// <summary>
 /// A wrapper around <see cref="Result"/> with a <see cref="Object.ToString"/> implementation that uses structured
@@ -93,20 +103,27 @@ module Discoverer =
                 |> Option.map (fun attribute' -> attribute' :?> 'a, property))
 
     /// <summary>
+    /// Replaces New Line characters in source string for Environment.NewLine characters.
+    /// </summary>
+    let private standardizeNewLines (source: string) =
+        source.Replace("\r", "").Replace("\n", Environment.NewLine)
+
+    /// <summary>
     /// The auto-discovered <see cref="Example"/> test cases.
     /// </summary>
-    let private examples =
+    let private examples : seq<Example> =
         properties<ExampleAttribute> ()
         |> Seq.choose
             (fun (attribute, property) ->
                 match property.GetValue null with
                 | :? (string * string) as example ->
-                    {
-                        Name = property.Name
-                        Skip = Option.ofObj attribute.Skip
-                        Before = fst example
-                        After = snd example
-                    }
+                    ({
+                         Name = property.Name
+                         Skip = Option.ofObj attribute.Skip
+                         Before = fst example |> standardizeNewLines
+                         After = snd example |> standardizeNewLines
+                         Kind = attribute.Kind
+                     }: Example)
                     |> Some
                 | _ -> None)
 
@@ -122,7 +139,7 @@ module Discoverer =
                     {
                         Name = property.Name
                         Skip = Option.ofObj attribute.Skip
-                        Source = source
+                        Source = source |> standardizeNewLines
                     }
                     |> Some
                 | _ -> None)
@@ -144,21 +161,39 @@ module Discoverer =
         do examples |> Seq.map Example.toFixedPoint |> Seq.append fixedPoints |> Seq.iter data.Add
 
     /// <summary>
-    /// Asserts that the auto-discovered <see cref="Example"/> test cases are correct.
+    /// Asserts that the auto-discovered <see cref="Example"/> format test cases change from their
+    /// 'Before' state to their 'After' state under formatting.
     /// </summary>
     [<SkippableTheory>]
     [<ClassData(typeof<ExampleData>)>]
-    let ``Code is formatted correctly`` (example: Example) =
-        match example.Skip with
-        | Some reason -> Skip.If(true, reason)
-        | None -> Assert.Equal(Ok example.After |> ShowResult, Formatter.format example.Before |> ShowResult)
+    let ``Code is formatted correctly`` example =
+        match example.Kind with
+        | ExampleKind.FormatExample -> 
+            match example.Skip with
+            | Some reason -> Skip.If(true, reason)
+            | None -> Assert.Equal(Ok example.After |> ShowResult, Formatter.format example.Before |> ShowResult)
+        | _ -> ()
 
     /// <summary>
-    /// Asserts that the auto-discovered <see cref="FixedPoint"/> test cases are correct.
+    /// Asserts that the auto-discovered <see cref="Example"/> update test cases change from their
+    /// 'Before' state to their 'After' state under updating.
+    /// </summary>
+    [<SkippableTheory>]
+    [<ClassData(typeof<ExampleData>)>]
+    let ``Code is updated correctly`` example =
+        match example.Kind with
+        | ExampleKind.UpdateExample -> 
+            match example.Skip with
+            | Some reason -> Skip.If(true, reason)
+            | None -> Assert.Equal(Ok example.After |> ShowResult, Formatter.update example.Before |> ShowResult)
+        | _ -> ()
+
+    /// <summary>
+    /// Asserts that the auto-discovered <see cref="FixedPoint"/> test cases do not change under formatting.
     /// </summary>
     [<SkippableTheory>]
     [<ClassData(typeof<FixedPointData>)>]
-    let ``Formatted code is unchanged`` fixedPoint =
+    let ``Formatted code is unchanged`` (fixedPoint: FixedPoint) =
         match fixedPoint.Skip with
         | Some reason -> Skip.If(true, reason)
         | None -> Assert.Equal(Ok fixedPoint.Source |> ShowResult, Formatter.format fixedPoint.Source |> ShowResult)
