@@ -14,6 +14,19 @@ type internal Identifier =
       /// Optional type arguments
       TypeArgs: Type Tuple Option }
 
+/// A Unit expression, "()".
+type internal UnitExpression =
+    {
+        /// <summary>
+        /// The <c>(</c> symbol.
+        /// </summary>
+        OpenParen: Terminal
+
+        /// <summary>
+        /// The <c>)</c> symbol.
+        /// </summary>
+        CloseParen: Terminal }
+
 /// An escaped expression in an interpolated string
 type internal InterpStringExpression =
     {
@@ -175,6 +188,9 @@ and internal Expression =
 
     /// A tuple expression.
     | Tuple of Expression Tuple
+
+    /// A unit expression.
+    | Unit of UnitExpression
 
     /// A new array expression.
     | NewArray of NewArray
