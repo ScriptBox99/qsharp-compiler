@@ -162,6 +162,10 @@ type internal 'result Reducer() as reducer =
         match statement with
         | Let lets -> reducer.Let lets
         | Return returns -> reducer.Return returns
+        | Use ``use`` -> reducer.Use ``use``
+        | UseBlock ``use`` -> reducer.UseBlock ``use``
+        | Borrow borrow -> reducer.Borrow borrow
+        | BorrowBlock borrow -> reducer.BorrowBlock borrow
         | If ifs -> reducer.If ifs
         | Else elses -> reducer.Else elses
         | Statement.Unknown terminal -> reducer.Terminal terminal
@@ -186,6 +190,74 @@ type internal 'result Reducer() as reducer =
             reducer.Expression returns.Expression
             reducer.Terminal returns.Semicolon
         ]
+        |> reduce
+
+    abstract Use : ``use``: Use -> 'result
+
+    default _.Use ``use`` =
+        [
+            reducer.Terminal(``use``.UseKeyword) |> Some
+            match ``use``.OpenParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.QubitBinding(``use``.Binding) |> Some
+            match ``use``.CloseParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.Terminal(``use``.Semicolon) |> Some
+        ]
+        |> List.choose id
+        |> reduce
+
+    abstract UseBlock : ``use``: UseBlock -> 'result
+
+    default _.UseBlock ``use`` =
+        [
+            reducer.Terminal(``use``.UseKeyword) |> Some
+            match ``use``.OpenParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.QubitBinding(``use``.Binding) |> Some
+            match ``use``.CloseParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.Block(reducer.Statement, ``use``.Block) |> Some
+        ]
+        |> List.choose id
+        |> reduce
+
+    abstract Borrow : borrow: Borrow -> 'result
+
+    default _.Borrow borrow =
+        [
+            reducer.Terminal(borrow.BorrowKeyword) |> Some
+            match borrow.OpenParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.QubitBinding(borrow.Binding) |> Some
+            match borrow.CloseParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.Terminal(borrow.Semicolon) |> Some
+        ]
+        |> List.choose id
+        |> reduce
+
+    abstract BorrowBlock : borrow: BorrowBlock -> 'result
+
+    default _.BorrowBlock borrow =
+        [
+            reducer.Terminal(borrow.BorrowKeyword) |> Some
+            match borrow.OpenParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.QubitBinding(borrow.Binding) |> Some
+            match borrow.CloseParen with
+            | None -> None
+            | Some s -> reducer.Terminal(s) |> Some
+            reducer.Block(reducer.Statement, borrow.Block) |> Some
+        ]
+        |> List.choose id
         |> reduce
 
     abstract If : ifs: If -> 'result
@@ -219,6 +291,52 @@ type internal 'result Reducer() as reducer =
     default _.SymbolDeclaration declaration =
         reducer.Terminal declaration.Name
         :: (declaration.Type |> Option.map reducer.TypeAnnotation |> Option.toList)
+        |> reduce
+
+    abstract QubitBinding : binding: QubitBinding -> 'result
+
+    default _.QubitBinding binding =
+        [
+            reducer.QubitSymbolBinding binding.Name
+            reducer.Terminal binding.Equals
+            reducer.QubitInitializer binding.Initializer
+        ]
+        |> reduce
+
+    abstract QubitSymbolBinding : symbol: QubitSymbolBinding -> 'result
+
+    default _.QubitSymbolBinding symbol =
+        match symbol with
+        | QubitSymbolDeclaration declaration -> reducer.Terminal declaration
+        | QubitSymbolTuple tuple -> reducer.Tuple(reducer.QubitSymbolBinding, tuple)
+
+    abstract QubitInitializer : initializer: QubitInitializer -> 'result
+
+    default _.QubitInitializer initializer =
+        match initializer with
+        | SingleQubit singleQubit -> reducer.SingleQubit singleQubit
+        | QubitArray qubitArray -> reducer.QubitArray qubitArray
+        | QubitTuple tuple -> reducer.Tuple(reducer.QubitInitializer, tuple)
+
+    abstract SingleQubit : newQubit: SingleQubit -> 'result
+
+    default _.SingleQubit newQubit =
+        [
+            reducer.Terminal newQubit.Qubit
+            reducer.Terminal newQubit.OpenParen
+            reducer.Terminal newQubit.CloseParen
+        ]
+        |> reduce
+
+    abstract QubitArray : newQubits: QubitArray -> 'result
+
+    default _.QubitArray newQubits =
+        [
+            reducer.Terminal newQubits.Qubit
+            reducer.Terminal newQubits.OpenBracket
+            reducer.Expression newQubits.Length
+            reducer.Terminal newQubits.CloseBracket
+        ]
         |> reduce
 
     abstract InterpStringContent : interpStringContent: InterpStringContent -> 'result
