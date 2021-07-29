@@ -115,7 +115,7 @@ let ``Updates Borrowing Statements`` =
     }
 }"""
 
-[<UpdateExample>]
+[<Example(ExampleKind.UpdateExample)>]
 let ``Updates Unit Types`` =
     """namespace Foo {
     operation Bar1() : () {
