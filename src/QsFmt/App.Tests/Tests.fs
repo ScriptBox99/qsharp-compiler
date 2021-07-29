@@ -23,12 +23,6 @@ type private Result =
     }
 
 /// <summary>
-/// Replaces New Line characters in source string for Environment.NewLine characters.
-/// </summary>
-let private standardizeNewLines (source: string) =
-    source.Replace("\r", "").Replace("\n", Environment.NewLine)
-
-/// <summary>
 /// Runs the application with the command-line arguments, <paramref name="args"/>, and the standard input,
 /// <paramref name="input"/>.
 /// </summary>
@@ -73,7 +67,6 @@ OPTIONS:
 
     --help                Display this list of options.
 "
-                |> standardizeNewLines
         },
         run [||] ""
     )
@@ -90,14 +83,15 @@ let ``Formats file`` path output =
     Assert.Equal(
         {
             Code = 0
-            Out = output |> standardizeNewLines
+            Out = output
             Error = ""
         },
         run [| path |] ""
     )
 
 [<Theory>]
-[<InlineData("namespace Foo { function Bar() : Int { return 0; } }\n",
+[<InlineData("namespace Foo { function Bar() : Int { return 0; } }
+",
              "namespace Foo {
     function Bar() : Int {
         return 0;
@@ -108,10 +102,10 @@ let ``Formats standard input`` input output =
     Assert.Equal(
         {
             Code = 0
-            Out = output |> standardizeNewLines
+            Out = output
             Error = ""
         },
-        run [| "-" |] (input |> standardizeNewLines)
+        run [| "-" |] input
     )
 
 [<Theory>]
@@ -123,9 +117,9 @@ let ``Shows syntax errors`` input errors =
         {
             Code = 1
             Out = ""
-            Error = errors |> standardizeNewLines
+            Error = errors
         },
-        run [| "-" |] (input |> standardizeNewLines)
+        run [| "-" |] input
     )
 
 [<Theory>]
