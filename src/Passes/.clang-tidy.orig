@@ -66,11 +66,16 @@ CheckOptions:
   - key:    readability-identifier-naming.ProtectedMemberSuffix
     value:  '_'        
 
+<<<<<<< HEAD
   # Type Alias and Enum Types / constants
+=======
+  # Alias
+>>>>>>> features/llvm-passes
   - key:    readability-identifier-naming.TypeAliasCase
     value:  'CamelCase'
   - key:    readability-identifier-naming.TypedefCase
     value:  'CamelCase'
+<<<<<<< HEAD
   - key:    readability-identifier-naming.EnumCase
     value:  'CamelCase'
   - key:    readability-identifier-naming.EnumConstantCase
@@ -83,6 +88,8 @@ CheckOptions:
     value:  'G_'
   - key:    readability-identifier-naming.ConstantCase
     value: 'UPPER_CASE'
+=======
+>>>>>>> features/llvm-passes
 
   # Functions
   - key:    readability-identifier-naming.FunctionCase
@@ -98,6 +105,21 @@ CheckOptions:
   - key:    readability-identifier-naming.ParameterCase
     value:  'lower_case'
 
+<<<<<<< HEAD
+=======
+  # Globals, consts and enums
+  - key:    readability-identifier-naming.GlobalConstantCase
+    value:  'UPPER_CASE'
+  - key:    readability-identifier-naming.GlobalConstantPrefix
+    value:  'G_'
+  - key:    readability-identifier-naming.ConstantCase
+    value: 'UPPER_CASE'
+  - key:    readability-identifier-naming.EnumCase
+    value:  'CamelCase'
+  - key:    readability-identifier-naming.EnumConstantCase
+    value:  'CamelCase'
+
+>>>>>>> features/llvm-passes
   # Macros
   - key:    readability-identifier-naming.MacroDefinitionCase
     value:  'UPPER_CASE'

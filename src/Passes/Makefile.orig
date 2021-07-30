@@ -4,4 +4,7 @@ nothing:
 clean:
 	rm -rf Release/
 	rm -rf Debug/
+<<<<<<< HEAD
 
+=======
+>>>>>>> features/llvm-passes
